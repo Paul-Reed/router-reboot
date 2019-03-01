@@ -2,9 +2,9 @@
 This sketch performs the following actions;
 
 1) Connects to local wifi
-2) Every 20 minutes, it pings 'google' (and if no reply - then 'cloudflare') and if it gets
+2) Every 20 minutes, it pings 'google' and then 'cloudflare', and if it gets
    a response, the ESP will go to deep sleep mode for 20 mins, then repeat.
-3) If no reply is received from either, the sketch enters a loop, rechecking google &
+3) If no reply is received, the sketch enters a loop, rechecking google &
    cloudflare, for a further 4 times, 1 minute apart.
 4) If no reply is received, the relay will remove power to the router for 5
    seconds causing a router reboot.
@@ -12,6 +12,9 @@ This sketch performs the following actions;
    stabilise.
    
 https://www.losant.com/blog/making-the-esp8266-low-powered-with-deep-sleep
+
+To enable the ESP to wake up, Pins RST & D0 must be hardwired together.
+PS - disconnect the link to upload a sketch
 **/
 
 #include <ESP8266Ping.h>
@@ -27,12 +30,15 @@ long startTime = millis();
 unsigned long wifiConnectStart;
 const IPAddress google (8, 8, 8, 8);
 const IPAddress cloudflare (1, 1, 1, 1);
+// Fake IP's for testing no responses
+// const IPAddress google (8, 8, 8, 0);
+// const IPAddress cloudflare (8, 8, 8, 0);
 long rssi;
 int count = 0;
 long lastPingTime = 0;
 // pin 2 is the LED pin
-// pin 15 = D8
-#define relayPin 15
+// pin 13 = D7
+#define relayPin 13
 
 WiFiClientSecure wifiClient;
 
@@ -83,8 +89,8 @@ void connect() {
 void setup() {
   Serial.begin(115200);
   Serial.setTimeout(2000);
+  digitalWrite(relayPin, HIGH);
   pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, LOW);
   connect();
 }
 
@@ -111,11 +117,11 @@ void loop() {
     if (count >= 5) {
       Serial.print("No ping results - rebooting router ");
       //Reboot code
-        digitalWrite(relayPin, HIGH);
-        delay(5000);
         digitalWrite(relayPin, LOW);
+        delay(5000);
+        digitalWrite(relayPin, HIGH);
         Serial.println("...and going to sleep whilst router reboots");
-        ESP.deepSleep(3e+8); // 5 minutes
+        ESP.deepSleep(1.8e+9); // 1.8e+9 = 30 minutes
    }
   }
  }  
